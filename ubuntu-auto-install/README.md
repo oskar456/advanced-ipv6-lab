@@ -6,7 +6,7 @@ of the lab environment without the help of Vagrant or Virtualbox. It uses
 [Automated Server
 installation](https://ubuntu.com/server/docs/install/autoinstall) feature
 of Ubuntu server together with [cloud-init](https://cloud-init.io/). It can
-run anywhere where Ubuntu 22.04 is supported, including ARM architecture
+run anywhere where Ubuntu 24.04 is supported, including ARM architecture
 computers like M1/M2 Apple Hardware. It has been tested using
 [UTM](https://mac.getutm.app/) hypervisor on both arm64 and x86_64
 architectures. Other hypervisors and/or architectures might or might not
@@ -32,7 +32,7 @@ Preparing virtual machine from scratch
    with prompt "New…", put this path:
    
    ```
-   -smbios type=1,serial=ds=nocloud-net;s=https://raw.githubusercontent.com/RIPE-NCC/bgp-security-lab/main/ubuntu-auto-install/
+   -smbios type=1,serial=ds=nocloud-net;s=https://raw.githubusercontent.com/oskar456/advanced-ipv6-lab/main/ubuntu-auto-install/
    ```
 4. In case of Intel computer, adjust virtual machine setup like this:
    - Display: Emulated Display Card: `virtio-vga-gl`
@@ -45,7 +45,7 @@ Preparing virtual machine from scratch
 7. After several minutes, the installer will reboot the virtual machine. Do NOT
    boot the ISO image again, eject it or select "Boot from next volume."
 8. During the first start, the installation of the lab environment takes place.
-   Please wait at least minutes. You can log in using password "ubuntu" or
+   Please wait at least 10 minutes. You can log in using password "ubuntu" or
    just wait. Don't get bothered by "Login timed out after 60 seconds."
 9. After installation is done, you will be logged in automatically. The last
    line before prompt should read: "status: done."
@@ -84,5 +84,5 @@ Troubleshooting
    fails in `/var/log/cloud-init.log`. You can also try to run Ansible manually
    to see the exact cause of errors/delays :
    ```
-   $ ansible-playbook -i bgp-security-lab/ansible/inventory.ini bgp-security-lab/ansible/site.yaml
+   $ ansible-playbook -i advanced-ipv6-lab/ansible/inventory.ini advanced-ipv6-lab/ansible/site.yaml
    ```

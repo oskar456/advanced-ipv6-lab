@@ -1,0 +1,112 @@
+---
+
+- name: PHPIPAM installation
+  hosts: default
+  become: true
+  tags: host
+  tasks:
+    - name: Include variables
+      ansible.builtin.include_vars: vars/default.yaml
+
+    - name: Install necessary packages
+      tags: install
+      apt:
+        package:
+          - nginx
+          - mysql-server
+          - php-mbstring
+          - php-gd
+          - php-curl
+          - php-gmp
+          - php-fpm
+          - php-pear
+          - php-mysql
+          - python3-pymysql
+
+    - name: Unpack phpipam archive
+      tags: install
+      ansible.builtin.unarchive:
+        src: "https://github.com/phpipam/phpipam/releases/download/v1.7.3/phpipam-v1.7.3.tgz"
+        dest: "/var/www/html"
+        remote_src: yes
+
+    - name: Copy phpipam config
+      tags: install
+      copy:
+        src: phpipam-config.php
+        dest: "/var/www/html/phpipam/config.php"
+
+    - name: Patch phpipam URL build
+      tags: install
+      lineinfile:
+        dest: "/var/www/html/phpipam/functions/classes/class.Common.php"
+        line: '               return "";'
+        insertafter: 'public function createURL ()'
+
+    - name: Enable php-fpm in NGINX
+      tags: install
+      ansible.builtin.blockinfile:
+        path: "/etc/nginx/sites-available/default"
+        insertafter: '^\s*server_name'
+        block: |
+          index index.php index.html index.htm;
+          location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/php-fpm.sock;
+            fastcgi_param PHP_AUTH_USER Admin;
+          }
+      notify: reload nginx
+
+    - name: Drop phpipam database
+      tags: mysql
+      community.mysql.mysql_db:
+        name: phpipam
+        state: absent
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Create phpipam database
+      tags: mysql
+      community.mysql.mysql_db:
+        name: phpipam
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Create DB user
+      tags: mysql
+      community.mysql.mysql_user:
+        column_case_sensitive: false
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: phpipam
+        password: 'phpipamadmin'
+        priv:
+         'phpipam.*': 'ALL'
+
+    - name: Import DB schema
+      tags: mysql
+      community.mysql.mysql_db:
+        name: phpipam
+        state: import
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        target: /var/www/html/phpipam/db/SCHEMA.sql
+
+    - name: Fixup user authentication
+      tags: mysql
+      community.mysql.mysql_query:
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        login_db: phpipam
+        query:
+          - UPDATE users SET passChange="No"
+          - UPDATE users SET authMethod=2
+
+  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded
+
+    - name: systemctl daemon-reload
+      systemd:
+        daemon_reload: yes
+
+
+...

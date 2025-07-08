@@ -1,7 +1,7 @@
-Vagrant-based personal network lab - BGP Security
-=================================================
+Vagrant-based personal network lab - IPv6 Advanced
+==================================================
 
-This is a small self contained lab for playing with BGP security. It uses [VirtualBox](https://www.virtualbox.org/) to run a virtual
+This is a small self contained lab, accompanying the IPv6 Advanced e-learning course. It uses [VirtualBox](https://www.virtualbox.org/) to run a virtual
 Linux server hosting a few [LXD](https://linuxcontainers.org/lxd/) containers
 running Ubuntu Linux. For a convenient access to
 the consoles of the virtual routers, [ttyd](https://github.com/tsl0922/ttyd) is

@@ -1,5 +1,0 @@
-[Unit]
-Description=ttyd-container target
-
-[Install]
-WantedBy=default.target

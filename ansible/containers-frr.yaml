@@ -1,0 +1,249 @@
+---
+
+
+- name: Deploy Incus containers
+  hosts: default
+  become: false
+  tags: container
+  handlers:
+    - name: restart frr
+      delegate_to: bb1
+      service:
+        name: frr
+        state: restarted
+
+  tasks:
+    - name: Create Alpine container
+      lxd_container:
+        url: "unix:/var/lib/incus/unix.socket"
+        name: bb1
+        state: started
+        devices:
+          eth0:
+            type: nic
+            name: eth0
+            nictype: bridged
+            parent: lxdbr0
+            ipv4.address: 192.0.2.101
+            hwaddr: "00:16:3e:ee:01:01"
+        ignore_volatile_options: false
+        source:
+          type: image
+          mode: pull
+          server: https://images.linuxcontainers.org
+          protocol: simplestreams
+          alias: alpine/3.21
+        profiles: ["default"]
+        wait_for_ipv4_addresses: true
+
+    - name: Check Python3 in the container
+      delegate_to: bb1
+      raw: python3 /dev/null
+      register: python3_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Python 3 into Alpine container
+      delegate_to: bb1
+      raw: apk add python3
+      when: python3_check.rc != 0
+
+    - name: Upgrade everything in the container
+      delegate_to: bb1
+      apk:
+        update_cache: yes
+        upgrade: yes
+      ignore_errors: yes  # If container is not connected to the internet
+
+    - name: Disable cron in the container
+      delegate_to: bb1
+      service:
+        name: crond
+        enabled: no
+        state: stopped
+
+    - name: Install FRR into container
+      delegate_to: bb1
+      apk:
+        name:
+          - frr
+          - frr-rpki
+
+    - name: Ensure IP forwarding is enabled
+      delegate_to: bb1
+      sysctl:
+        sysctl_file: /etc/sysctl.d/forwarding.conf
+        name: "{{ item }}"
+        value: "1"
+        sysctl_set: yes
+      with_items:
+          - net.ipv4.conf.all.forwarding
+          - net.ipv6.conf.all.forwarding
+          - net.ipv6.conf.default.forwarding
+
+    - name: Enable and start sysctl in the container
+      delegate_to: bb1
+      service:
+        name: sysctl
+        state: started
+        enabled: yes
+
+    - name: Enable FRR daemons
+      delegate_to: bb1
+      lineinfile:
+        path: "/etc/frr/daemons"
+        line: "{{ item }}=yes"
+        regexp: "^{{ item }}="
+      notify: restart frr
+      with_items:
+        - bgpd
+        - ospf6d
+        - ospfd
+
+    - meta: flush_handlers
+
+    - name: Clone Alpine containers
+      lxd_container:
+        url: "unix:/var/lib/incus/unix.socket"
+        name: "{{ item.name }}"
+        ignore_volatile_options: false
+        devices:
+          eth0:
+            type: nic
+            name: eth0
+            nictype: bridged
+            parent: lxdbr0
+            ipv4.address: "{{ item.ip }}"
+            hwaddr: "{{ item.mac }}"
+        state: started
+        source:
+          type: copy
+          source: bb1
+        profiles: ["default"]
+        wait_for_ipv4_addresses: true
+      with_items:
+        - name: bb2
+          mac: 00:16:3e:ee:01:02
+          ip: 192.0.2.102
+        - name: bb3
+          mac: 00:16:3e:ee:01:03
+          ip: 192.0.2.103
+        - name: bb4
+          mac: 00:16:3e:ee:0c:04
+          ip: 192.0.2.104
+        - name: cpe
+          mac: 00:16:3e:ee:0c:0b
+          ip: 192.0.2.111
+        - name: transit
+          mac: 00:16:3e:ee:00:20
+          ip: 192.0.2.200
+
+    - name: Attach networks to the containers
+      command:
+        cmd: "incus network attach {{ item.network }} {{ item.container }} {{ item.ifname }} {{ item.ifname }}"
+      register: net_attach
+      failed_when: net_attach.rc not in [0, 1]
+      changed_when: net_attach.rc == 0
+      with_items:
+         - network: bb1-to-bb2
+           container: bb1
+           ifname: to_bb2
+         - network: bb1-to-bb3
+           container: bb1
+           ifname: to_bb3
+         - network: bb1-to-bb4
+           container: bb1
+           ifname: to_bb4
+         - network: bb1-to-transit
+           container: bb1
+           ifname: to_transit
+         - network: bb1-to-dc
+           container: bb1
+           ifname: to_dc
+         - network: bb1-to-bb2
+           container: bb2
+           ifname: to_bb1
+         - network: bb2-to-bb3
+           container: bb2
+           ifname: to_bb3
+         - network: bb2-to-bb4
+           container: bb2
+           ifname: to_bb4
+         - network: bb2-to-transit
+           container: bb2
+           ifname: to_transit
+         - network: bb1-to-bb3
+           container: bb3
+           ifname: to_bb1
+         - network: bb2-to-bb3
+           container: bb3
+           ifname: to_bb2
+         - network: bb3-to-bb4
+           container: bb3
+           ifname: to_bb4
+         - network: cpe-to-bb3
+           container: bb3
+           ifname: to_cpe
+         - network: bb1-to-bb4
+           container: bb4
+           ifname: to_bb1
+         - network: bb2-to-bb4
+           container: bb4
+           ifname: to_bb2
+         - network: bb3-to-bb4
+           container: bb4
+           ifname: to_bb3
+         - network: cpe-to-bb4
+           container: bb4
+           ifname: to_cpe
+         - network: cpe-to-bb3
+           container: cpe
+           ifname: to_bb3
+         - network: cpe-to-bb4
+           container: cpe
+           ifname: to_bb4
+         - network: host2-to-cpe
+           container: cpe
+           ifname: to_host2
+         - network: bb1-to-transit
+           container: transit
+           ifname: to_bb1
+         - network: bb2-to-transit
+           container: transit
+           ifname: to_bb2
+         - network: transit-to-www
+           container: transit
+           ifname: to_www
+- name: FRR configuration
+  hosts: frr
+  tags: frr
+  tasks:
+    - name: Deploy configs
+      copy:
+        src: "frr/{{ inventory_hostname }}/{{ item }}"
+        dest: "/etc/frr/{{ item }}"
+        owner: frr
+        group: frr
+        mode: 0644
+      notify: restart frr
+      when: "[ playbook_dir, \"files/frr\", inventory_hostname, item]|join('/') is file"
+      with_items:
+        - vtysh.conf
+        - banner.txt
+        - frr.conf
+
+
+    - name: Enable and start frr
+      service:
+        name: frr
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: restart frr
+      service:
+        name: frr
+        state: restarted
+
+
+...

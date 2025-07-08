@@ -1,0 +1,15 @@
+$ORIGIN example.
+$TTL 300
+
+@	300	IN	SOA ns.example. admin.example. (
+				2024090100 ; serial
+				7200       ; refresh (2 hours)
+				3600       ; retry (1 hour)
+				1209600    ; expire (2 weeks)
+				3600       ; minimum (1 hour)
+				)
+
+@	300	IN	NS	ns.example.
+ns	300	IN	A	127.0.0.1
+
+www	300	IN	A	10.0.87.7

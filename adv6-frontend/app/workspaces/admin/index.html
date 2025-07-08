@@ -1,0 +1,22 @@
+    <style>
+        div.flex {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        div.flex div {
+          float: left;
+          margin: 12px;
+        }
+    </style>
+    <section>
+       <h2>Admin console</h2>
+         <div class="flex">
+           <vm-console src="/console/admin/"><h3>VM console</h3></vm-console>
+           <vm-console src="/vtysh/transit/"><h3>Transit Router</h3></vm-console>
+           <vm-console src="/shell/www/"><h3>Web server</h3></vm-console>
+           <div>
+             <hints-tag></hints-tag>
+             <scratch-pad></scratch-pad>
+           </div>
+        </div>
+    </section>

@@ -2,7 +2,7 @@
 set -eu
 
 GENDIR="$1"
-WANTDIR="$1/ttyd-container.target.wants"
+WANTDIR="$1/ttyd-vtysh.target.wants"
 SERVICEFILE="/etc/systemd/system/ttyd-vtysh@.service"
 
 mkdir -p "$WANTDIR"

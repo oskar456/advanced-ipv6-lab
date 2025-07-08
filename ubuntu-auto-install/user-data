@@ -1,13 +1,12 @@
 #cloud-config
 autoinstall:
-  snaps:
-    - name: lxd
   packages:
     - python3-packaging
     - python3-pip
     - git
+    - incus
   identity:
-    hostname: bgpseclab
+    hostname: adv6lab
     username: ubuntu
     password: $6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0
   late-commands:
@@ -25,13 +24,13 @@ autoinstall:
       run_user: ubuntu
       galaxy:
         actions:
-          - ["ansible-galaxy", "collection", "install", "community.general", "ansible.posix"]
+          - ["ansible-galaxy", "collection", "install", "community.general", "ansible.posix", "community.mysql"]
       setup_controller:
         repositories:
-          - path: /home/ubuntu/bgp-security-lab/
-            source: https://github.com/RIPE-NCC/bgp-security-lab.git
+          - path: /home/ubuntu/advanced-ipv6-lab/
+            source: https://github.com/oskar456/advanced-ipv6-lab.git
         run_ansible:
-          - playbook_dir: /home/ubuntu/bgp-security-lab/ansible/
+          - playbook_dir: /home/ubuntu/advanced-ipv6-lab/ansible/
             playbook_name: site.yaml
             inventory: inventory.ini
   source:

@@ -1,0 +1,223 @@
+---
+
+
+- name: Deploy Linux containers
+  hosts: default
+  become: false
+  tags: container
+  tasks:
+    - name: Create Alpine containers
+      lxd_container:
+        url: "unix:/var/lib/incus/unix.socket"
+        name: "{{ item.name }}"
+        state: started
+        devices:
+          eth0:
+            type: nic
+            name: eth0
+            nictype: bridged
+            parent: lxdbr0
+            ipv4.address: "{{ item.ip }}"
+            hwaddr: "{{ item.mac }}"
+        ignore_volatile_options: false
+        source:
+          type: image
+          mode: pull
+          server: https://images.linuxcontainers.org
+          protocol: simplestreams
+          alias: alpine/3.21
+        profiles: ["default"]
+        wait_for_ipv4_addresses: true
+      with_items:
+        - name: host2
+          mac: 00:16:3e:ee:00:52
+          ip: 192.0.2.52
+    - name: Check Python3 in the container
+      delegate_to: host2
+      raw: python3 /dev/null
+      register: python3_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Python 3 into Alpine container
+      delegate_to: host2
+      raw: apk add python3
+      when: python3_check.rc != 0
+    - name: Upgrade everything in the container
+      delegate_to: host2
+      apk:
+        update_cache: yes
+        upgrade: yes
+      ignore_errors: yes  # If container is not connected to the internet
+
+    - name: Disable cron in the container
+      delegate_to: host2
+      service:
+        name: crond
+        enabled: no
+        state: stopped
+
+    - name: Install packages into container
+      delegate_to: host2
+      apk:
+        name:
+          - bash
+          - bind-tools
+          - busybox-extras
+          - curl
+          - iproute2
+          - iputils
+          - mtr
+          - net-tools
+          - openssl
+          - procps
+          - tcpdump
+          - tcptraceroute
+          - wget
+          - vim
+          - ed
+          - nano
+          - dhcpcd
+
+    - name: Clone Alpine containers
+      lxd_container:
+        url: "unix:/var/lib/incus/unix.socket"
+        name: "{{ item.name }}"
+        ignore_volatile_options: false
+        devices:
+          eth0:
+            type: nic
+            name: eth0
+            nictype: bridged
+            parent: lxdbr0
+            ipv4.address: "{{ item.ip }}"
+            hwaddr: "{{ item.mac }}"
+        state: started
+        source:
+          type: copy
+          source: host2
+        profiles: ["default"]
+        wait_for_ipv4_addresses: true
+      with_items:
+        - name: dns
+          mac: 00:16:3e:ee:00:53
+          ip: 192.0.2.53
+        - name: www
+          mac: 00:16:3e:ee:00:54
+          ip: 192.0.2.54
+    - name: Attach networks to the containers
+      command:
+        cmd: "incus network attach {{ item.network }} {{ item.container }} {{ item.ifname }} {{ item.ifname }}"
+      register: net_attach
+      failed_when: net_attach.rc not in [0, 1]
+      changed_when: net_attach.rc == 0
+      with_items:
+         - network: host2-to-cpe
+           container: host2
+           ifname: to_cpe
+         - network: bb1-to-dc
+           container: dns
+           ifname: to_bb1
+         - network: transit-to-www
+           container: www
+           ifname: to_transit
+
+- name: Provision web server
+  hosts: www
+  tags: container
+  tasks:
+    - name: Install nginx
+      apk:
+        name: nginx
+    - name: Setup config file
+      copy:
+        src: nginx-ip.conf
+        dest: /etc/nginx/http.d/default.conf
+      notify: reload nginx
+    - name: configure IP addresses
+      blockinfile:
+        path: /etc/network/interfaces
+        block: |
+          auto to_transit
+          iface to_transit
+            use link
+            use static
+            address 10.0.87.7/24
+            gateway 10.0.87.8
+            address 2001:db8:99:78::7/64
+            gateway 2001:db8:99:78::8
+    - name: disable eth0
+      lineinfile:
+        path: /etc/network/interfaces
+        line: "#auto eth0"
+        regexp: '^#?auto eth0'
+
+
+  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded
+
+
+- name: Provision DNS server
+  hosts: dns
+  tags: container
+  tasks:
+    - name: Install bind
+      apk:
+        name: bind
+    - name: Setup config files
+      copy:
+        src: "bind/{{ item }}"
+        dest: "/etc/bind/{{ item }}"
+      notify: reload bind
+      with_items:
+        - named.conf
+        - example.zone
+    - name: configure IP addresses
+      blockinfile:
+        path: /etc/network/interfaces
+        block: |
+          auto to_bb1
+          iface to_bb1
+            use link
+            use static
+            address 10.1.100.14/24
+            gateway 10.1.100.1
+            nameserver 10.1.100.14
+            address 2001:db8:103::e/64
+            gateway 2001:db8:103::1
+    - name: disable eth0
+      lineinfile:
+        path: /etc/network/interfaces
+        line: "#auto eth0"
+        regexp: '^#?auto eth0'
+  handlers:
+    - name: reload bind
+      service:
+        name: named
+        state: reloaded
+
+- name: Provision host2
+  hosts: host2
+  tags: container
+  tasks:
+    - name: configure IP addresses
+      blockinfile:
+        path: /etc/network/interfaces
+        block: |
+          auto to_cpe
+          iface to_cpe inet dhcp
+    - name: make sure eth0 does not work
+      lineinfile:
+        path: /etc/network/interfaces
+        line: "iface eth0 inet manual"
+        regexp: '^iface eth0'
+    - name: make sure eth0 does not work
+      lineinfile:
+        path: /etc/network/interfaces
+        line: " up ip link set dev eth0 down"
+        insertafter: '^iface eth0'
+...
+

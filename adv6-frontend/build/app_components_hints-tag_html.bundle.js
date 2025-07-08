@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkworkbench_shell=self.webpackChunkworkbench_shell||[]).push([["app_components_hints-tag_html"],{"./app/components/hints-tag.html":(n,e,s)=>{s.r(e),s.d(e,{default:()=>t});const t="<h3>Hints</h3>\n<ul>\n  <li>Feel free to <strong>resize terminal windows</strong> by dragging (does not work in Safari)</li>\n</ul>\n"}}]);
