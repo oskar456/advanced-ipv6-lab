@@ -78,6 +78,7 @@
           - ed
           - nano
           - dhcpcd
+          - openresolv
 
     - name: Clone Alpine containers
       lxd_container:
@@ -105,6 +106,9 @@
         - name: www
           mac: 00:16:3e:ee:00:54
           ip: 192.0.2.54
+        - name: localweb
+          mac: 00:16:3e:ee:00:55
+          ip: 192.0.2.55
     - name: Attach networks to the containers
       command:
         cmd: "incus network attach {{ item.network }} {{ item.container }} {{ item.ifname }} {{ item.ifname }}"
@@ -121,8 +125,11 @@
          - network: transit-to-www
            container: www
            ifname: to_transit
+         - network: bb1-to-dc
+           container: localweb
+           ifname: to_bb1
 
-- name: Provision web server
+- name: Provision www server
   hosts: www
   tags: container
   tasks:
@@ -134,6 +141,11 @@
         src: nginx-ip.conf
         dest: /etc/nginx/http.d/default.conf
       notify: reload nginx
+    - name: enable nginx
+      service:
+        name: nginx
+        enabled: true
+        state: started
     - name: configure IP addresses
       blockinfile:
         path: /etc/network/interfaces
@@ -151,8 +163,48 @@
         path: /etc/network/interfaces
         line: "#auto eth0"
         regexp: '^#?auto eth0'
+  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded
 
-
+- name: Provision localweb server
+  hosts: localweb
+  tags: container
+  tasks:
+    - name: Install nginx
+      apk:
+        name: nginx
+    - name: Setup config file
+      copy:
+        src: nginx-ip.conf
+        dest: /etc/nginx/http.d/default.conf
+      notify: reload nginx
+    - name: enable nginx
+      service:
+        name: nginx
+        enabled: true
+        state: started
+    - name: configure IP addresses
+      blockinfile:
+        path: /etc/network/interfaces
+        block: |
+          auto to_bb1
+          iface to_bb1
+            use link
+            use static
+            address 10.1.100.11/24
+            gateway 10.1.100.1
+            nameserver 10.1.100.14
+            address 2001:db8:103::b/64
+            gateway 2001:db8:103::1
+            up echo nameserver 10.1.100.14 | resolvconf -x -a $IFACE
+    - name: disable eth0
+      lineinfile:
+        path: /etc/network/interfaces
+        line: "#auto eth0"
+        regexp: '^#?auto eth0'
   handlers:
     - name: reload nginx
       service:
@@ -175,6 +227,11 @@
       with_items:
         - named.conf
         - example.zone
+    - name: enable bind
+      service:
+        name: named
+        enabled: true
+        state: started
     - name: configure IP addresses
       blockinfile:
         path: /etc/network/interfaces
@@ -188,11 +245,7 @@
             nameserver 10.1.100.14
             address 2001:db8:103::e/64
             gateway 2001:db8:103::1
-    - name: disable eth0
-      lineinfile:
-        path: /etc/network/interfaces
-        line: "#auto eth0"
-        regexp: '^#?auto eth0'
+            up echo nameserver 10.1.100.14 | resolvconf -x -a $IFACE
   handlers:
     - name: reload bind
       service:

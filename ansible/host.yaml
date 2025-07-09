@@ -87,13 +87,6 @@
         group: www-data
         mode: 0644
 
-#    - name: Route everything to index.html page
-#      lineinfile:
-#        path: "/etc/nginx/sites-available/default"
-#        line: "		try_files $uri /index.html;"
-#        regexp: '^\s*try_files \$uri'
-#      notify: reload nginx
-
     - name: Start Nginx
       service:
         name: nginx

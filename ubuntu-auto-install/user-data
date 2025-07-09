@@ -19,8 +19,8 @@ autoinstall:
     runcmd:
      - [ passwd, -d, ubuntu ]
     ansible:
-      install_method: pip
-      package_name: ansible
+      install_method: distro
+      package_name: ansible-core
       run_user: ubuntu
       galaxy:
         actions:
