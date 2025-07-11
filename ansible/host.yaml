@@ -24,9 +24,6 @@
       apt:
         package:
           - nginx
-          - build-essential
-          - libevent-dev
-          - libncurses-dev
 
     - name: Setup WebSockets connection upgrade
       copy:

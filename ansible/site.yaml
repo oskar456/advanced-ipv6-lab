@@ -3,6 +3,7 @@
  - ansible.builtin.import_playbook: containers-infra.yaml
  - ansible.builtin.import_playbook: containers-frr.yaml
  - ansible.builtin.import_playbook: containers-linux.yaml
+ - ansible.builtin.import_playbook: tmux23.yaml
  - ansible.builtin.import_playbook: host.yaml
  - ansible.builtin.import_playbook: phpipam.yaml
 
