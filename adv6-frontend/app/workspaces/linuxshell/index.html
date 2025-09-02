@@ -1,0 +1,24 @@
+    <style>
+        div.flex {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        div.flex div {
+          float: left;
+          margin: 12px;
+        }
+    </style>
+    <section>
+       <h2>Linux shell of the routers</h2>
+         <div class="flex">
+           <vm-console src="/shell/bb1/"><h3>Backbone 1</h3></vm-console>
+           <vm-console src="/shell/bb2/"><h3>Backbone 2</h3></vm-console>
+           <vm-console src="/shell/cpe/"><h3>Enterprise CPE</h3></vm-console>
+           <div>
+             <hints-tag>
+               <li>Use <code>jool</code> command to control <a href="https://nicmx.github.io/Jool/en/intro-jool.html">Jool</a></li>
+             </hints-tag>
+             <scratch-pad></scratch-pad>
+           </div>
+         </div>
+    </section>

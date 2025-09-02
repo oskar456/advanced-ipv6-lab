@@ -31,10 +31,13 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", reset: true, inline: <<-SHELL
      add-apt-repository -y ppa:ansible/ansible
      export DEBIAN_FRONTEND=noninteractive
-     apt-get -y install ansible-core python3-packaging incus
+     apt-get -y install ansible-core python3-packaging incus jool-dkms
      ansible-galaxy collection install community.general community.mysql ansible.posix -p /usr/share/ansible/collections
      gpasswd -a vagrant lxd
      gpasswd -a vagrant incus-admin
+     rcvboxadd quicksetup all
+     echo "jool" > /etc/modules-load.d/jool.conf
+     echo "jool_siit" >> /etc/modules-load.d/jool.conf
   SHELL
   config.vm.provision "ansible_local" do |ansible|
     ansible.install = false

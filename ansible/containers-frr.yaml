@@ -18,6 +18,8 @@
         url: "unix:/var/lib/incus/unix.socket"
         name: bb1
         state: started
+        config:
+          security.privileged: "true"
         devices:
           eth0:
             type: nic
@@ -68,6 +70,7 @@
         name:
           - frr
           - frr-rpki
+          - jool-tools
 
     - name: Ensure IP forwarding is enabled
       delegate_to: bb1
