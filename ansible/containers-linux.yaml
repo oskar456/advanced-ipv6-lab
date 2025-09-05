@@ -156,8 +156,8 @@
             use static
             address 10.0.87.7/24
             gateway 10.0.87.8
-            address 2001:db8:99:78::7/64
-            gateway 2001:db8:99:78::8
+            address 3fff:99:78::7/64
+            gateway 3fff:99:78::8
     - name: disable eth0
       lineinfile:
         path: /etc/network/interfaces
@@ -197,8 +197,8 @@
             address 10.1.100.11/24
             gateway 10.1.100.1
             nameserver 10.1.100.14
-            address 2001:db8:103::b/64
-            gateway 2001:db8:103::1
+            address 3fff:100:3::b/64
+            gateway 3fff:100:3::1
             up echo nameserver 10.1.100.14 | resolvconf -x -a $IFACE
     - name: disable eth0
       lineinfile:
@@ -243,8 +243,8 @@
             address 10.1.100.14/24
             gateway 10.1.100.1
             nameserver 10.1.100.14
-            address 2001:db8:103::e/64
-            gateway 2001:db8:103::1
+            address 3fff:100:3::e/64
+            gateway 3fff:100:3::1
             up echo nameserver 10.1.100.14 | resolvconf -x -a $IFACE
   handlers:
     - name: reload bind

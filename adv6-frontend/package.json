@@ -15,7 +15,7 @@
   "author": "RIPE NCC L&D",
   "license": "ISC",
   "dependencies": {
-    "@technical-design/ripe-app-webcomponents": "^4.3.0",
+    "@technical-design/ripe-app-webcomponents": "^3.3.0",
     "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^6.2.0",
     "html-loader": "^2.1.2",

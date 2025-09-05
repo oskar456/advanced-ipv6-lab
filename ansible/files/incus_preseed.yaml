@@ -62,6 +62,10 @@ networks:
     ipv4.address: none
     ipv6.address: none
   name: transit-to-www
+- config:
+    ipv4.address: none
+    ipv6.address: none
+  name: custb-to-bb4
 
 storage_pools:
 - config:

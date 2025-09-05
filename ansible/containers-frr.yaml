@@ -135,11 +135,14 @@
           mac: 00:16:3e:ee:0c:04
           ip: 192.0.2.104
         - name: cpe
-          mac: 00:16:3e:ee:0c:0b
+          mac: 00:16:3e:ee:0c:be
           ip: 192.0.2.111
         - name: transit
           mac: 00:16:3e:ee:00:20
           ip: 192.0.2.200
+        - name: custb
+          mac: 00:16:3e:ee:0c:0b
+          ip: 192.0.2.121
 
     - name: Attach networks to the containers
       command:
@@ -199,11 +202,17 @@
          - network: cpe-to-bb4
            container: bb4
            ifname: to_cpe
+         - network: custb-to-bb4
+           container: bb4
+           ifname: to_custb
          - network: cpe-to-bb3
            container: cpe
            ifname: to_bb3
          - network: cpe-to-bb4
            container: cpe
+           ifname: to_bb4
+         - network: custb-to-bb4
+           container: custb
            ifname: to_bb4
          - network: host2-to-cpe
            container: cpe
