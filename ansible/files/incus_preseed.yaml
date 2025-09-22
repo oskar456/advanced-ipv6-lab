@@ -13,7 +13,7 @@ networks:
 - config:
     ipv4.address: none
     ipv6.address: none
-  name: host2-to-cpe
+  name: hosta-to-cpe
 - config:
     ipv4.address: none
     ipv6.address: none
@@ -65,7 +65,7 @@ networks:
 - config:
     ipv4.address: none
     ipv6.address: none
-  name: custb-to-bb4
+  name: cn1-to-bb4
 
 storage_pools:
 - config:

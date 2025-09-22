@@ -137,7 +137,7 @@ export const routeTo = (newUrl, options = {}) => {
   const urlparts = newUrl.split('#');
   const wsname = (urlparts.length > 1 ? urlparts[1].replace(/\//g, ""): "");
   if (wsname == "") {
-        routeTo(`${currentUrlPath || ""}${currentSearch || ""}#/`+(user=="admin"?"admin":"dashboard"), options);
+        routeTo(`${currentUrlPath || ""}${currentSearch || ""}#/network`, options);
         return;
   }
   console.log(`Router: routing to: ${wsname}`);

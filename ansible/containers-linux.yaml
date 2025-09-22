@@ -29,36 +29,36 @@
         profiles: ["default"]
         wait_for_ipv4_addresses: true
       with_items:
-        - name: host2
+        - name: hosta
           mac: 00:16:3e:ee:00:52
           ip: 192.0.2.52
     - name: Check Python3 in the container
-      delegate_to: host2
+      delegate_to: hosta
       raw: python3 /dev/null
       register: python3_check
       failed_when: false
       changed_when: false
 
     - name: Install Python 3 into Alpine container
-      delegate_to: host2
+      delegate_to: hosta
       raw: apk add python3
       when: python3_check.rc != 0
     - name: Upgrade everything in the container
-      delegate_to: host2
+      delegate_to: hosta
       apk:
         update_cache: yes
         upgrade: yes
       ignore_errors: yes  # If container is not connected to the internet
 
     - name: Disable cron in the container
-      delegate_to: host2
+      delegate_to: hosta
       service:
         name: crond
         enabled: no
         state: stopped
 
     - name: Install packages into container
-      delegate_to: host2
+      delegate_to: hosta
       apk:
         name:
           - bash
@@ -79,6 +79,8 @@
           - nano
           - dhcpcd
           - openresolv
+          - tcpdump
+          - termshark
 
     - name: Clone Alpine containers
       lxd_container:
@@ -96,7 +98,7 @@
         state: started
         source:
           type: copy
-          source: host2
+          source: hosta
         profiles: ["default"]
         wait_for_ipv4_addresses: true
       with_items:
@@ -116,8 +118,8 @@
       failed_when: net_attach.rc not in [0, 1]
       changed_when: net_attach.rc == 0
       with_items:
-         - network: host2-to-cpe
-           container: host2
+         - network: hosta-to-cpe
+           container: hosta
            ifname: to_cpe
          - network: bb1-to-dc
            container: dns
@@ -156,8 +158,8 @@
             use static
             address 10.0.87.7/24
             gateway 10.0.87.8
-            address 3fff:99:78::7/64
-            gateway 3fff:99:78::8
+            address 3fff:99:0:78::7/64
+            gateway 3fff:99:0:78::8
     - name: disable eth0
       lineinfile:
         path: /etc/network/interfaces
@@ -197,8 +199,8 @@
             address 10.1.100.11/24
             gateway 10.1.100.1
             nameserver 10.1.100.14
-            address 3fff:100:3::b/64
-            gateway 3fff:100:3::1
+            address 3fff:100:0:3::b/64
+            gateway 3fff:100:0:3::1
             up echo nameserver 10.1.100.14 | resolvconf -x -a $IFACE
     - name: disable eth0
       lineinfile:
@@ -243,8 +245,8 @@
             address 10.1.100.14/24
             gateway 10.1.100.1
             nameserver 10.1.100.14
-            address 3fff:100:3::e/64
-            gateway 3fff:100:3::1
+            address 3fff:100:0:3::e/64
+            gateway 3fff:100:0:3::1
             up echo nameserver 10.1.100.14 | resolvconf -x -a $IFACE
   handlers:
     - name: reload bind
@@ -252,8 +254,8 @@
         name: named
         state: reloaded
 
-- name: Provision host2
-  hosts: host2
+- name: Provision hosta
+  hosts: hosta
   tags: container
   tasks:
     - name: configure IP addresses
