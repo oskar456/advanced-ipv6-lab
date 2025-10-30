@@ -25,7 +25,7 @@
           mode: pull
           server: https://images.linuxcontainers.org
           protocol: simplestreams
-          alias: alpine/3.21
+          alias: alpine/3.22
         profiles: ["default"]
         wait_for_ipv4_addresses: true
       with_items:
