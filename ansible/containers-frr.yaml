@@ -253,6 +253,20 @@
         state: started
         enabled: yes
 
+
+    - name: configure DNS resolver
+      blockinfile:
+        path: /etc/network/interfaces
+        block: |
+          auto lo
+          iface lo
+            up echo nameserver 10.1.100.14 > /etc/resolv.conf
+    - name: disable eth0
+      lineinfile:
+        path: /etc/network/interfaces
+        line: "#auto eth0"
+        regexp: '^#?auto eth0'
+
   handlers:
     - name: restart frr
       service:
